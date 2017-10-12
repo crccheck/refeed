@@ -1,2 +1,7 @@
+aiodns
+aiohttp
+cchardet
+requests
+
 # dev
 flake8

@@ -8,3 +8,6 @@ install: ## Install requirements
 .PHONY: requirements.txt
 requirements.txt: ## Regenerate requirements.txt
 	pip-compile requirements.in > $@
+
+dev: ## Run dev environment with a watcher
+	nodemon -e py -x python main.py
