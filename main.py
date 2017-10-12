@@ -54,7 +54,6 @@ async def refeed(request):
     except KeyError:
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
-    pass_thru_headers = {}
     all_details = []
 
     async with aiohttp.ClientSession() as session:  # TODO headers=
@@ -62,32 +61,35 @@ async def refeed(request):
             resp = await session.get(feed_url)
         except ValueError as e:
             return web.Response(status=400, text=str(e))
-        pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
+
+        pass_thru_headers = {
+            'Content-Type': resp.headers['Content-Type'],
+        }
         # assert pass_thru_headers['Content-Type'] == application/rss+xml
         tree = ET.fromstring(await resp.text())
-        items = tree.findall('.//item')[:1]  # DEBUG enable for all items after Redis
-        # Populate all_details from cache
+        items = tree.findall('.//item')
 
+        # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
-        cache_keys = [feed_url + '|' + x['guid'] for x in all_details]
-        all_contexts = cache.mget(*cache_keys)
-        print(all_contexts)
+        cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
+        cached_details = cache.mget(*cache_keys)
 
         for idx, item in enumerate(items):
-            context = all_contexts[idx]
-            if context is None:
+            raw_context = cached_details[idx]
+            if raw_context is None:
                 resp = await session.get(all_details[idx]['link'])
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
-                data = build_item(article_tree)
-                all_contexts[idx] = data
-                cache.set(cache_keys[idx], json.dumps(data))
+                context = build_item(article_tree)
+                cached_details[idx] = context
+                cache.set(cache_keys[idx], json.dumps(context))  # TODO make this async
             else:
-                data = json.loads(context)
+                context = json.loads(raw_context)
 
-            for k, v in data.items():
+            # Re-write XML
+            for k, v in context.items():
                 node = item.find('./' + k)
-                node.text = data[k]
+                node.text = context[k]
     return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
 
