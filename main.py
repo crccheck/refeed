@@ -3,7 +3,7 @@ import os
 from xml.etree import ElementTree as ET
 
 from aiohttp import web
-from lxml.html import parse as html5_parse
+from lxml.html import document_fromstring
 import aiohttp
 
 
@@ -27,19 +27,18 @@ def get_item_details(item):
 
 
 def build_item(tree):
+    """
+    Build the context needed to replace item fields
+    """
     data = {
-        'title': '',
-        # 'link' This will come from the original RSS item
         'description': '',
-        # 'guid' This will come from the original RSS item
     }
 
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
     if jsonld_elem is not None:
         jsonld = json.loads(jsonld_elem.text)
-        data['title'] = jsonld['headline']
         data['description'] = """
-            <img src="{thumbnailUrl}" style="float: left; margin-right: 5px;" />
+            <img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
             <p>{description}</p>
         """.format(**jsonld)
 
@@ -52,21 +51,25 @@ async def refeed(request):
     except KeyError:
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
-    try:
-        pass_thru_headers = {}
-        async with aiohttp.ClientSession() as session:  # TODO headers=
+    pass_thru_headers = {}
+    async with aiohttp.ClientSession() as session:  # TODO headers=
+        try:
             resp = await session.get(feed_url)
-            # Should be: application/rss+xml
-            pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
-            text = await resp.text()
-            tree = ET.fromstring(text)
-            for item in tree.findall('.//item'):
-                item_details = get_item_details(item)
-                # resp = await session.get(item_details['link'))
-                # article_tree = html5_parse(resp)
-        return web.Response(text=text, headers=pass_thru_headers)
-    except ValueError as e:
-        return web.Response(status=400, text=str(e))
+        except ValueError as e:
+            return web.Response(status=400, text=str(e))
+        pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
+        # assert pass_thru_headers['Content-Type'] == application/rss+xml
+        tree = ET.fromstring(await resp.text())
+        for item in tree.findall('.//item')[:1]:  # DEBUG enable for all items after Redis
+            item_details = get_item_details(item)
+            resp = await session.get(item_details['link'])
+            # XML can take a file-like object but aiohttp's read() isn't file-like
+            article_tree = document_fromstring(await resp.read())
+            data = build_item(article_tree)
+            for k, v in data.items():
+                node = item.find('./' + k)
+                node.text = data[k]
+    return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
 
 app = web.Application()
