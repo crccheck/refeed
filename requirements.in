@@ -4,3 +4,6 @@ cchardet
 
 # dev
 flake8
+pytest
+pytest-cov
+pytest-watch

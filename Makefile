@@ -11,3 +11,14 @@ requirements.txt: ## Regenerate requirements.txt
 
 dev: ## Run dev environment with a watcher
 	nodemon -e py -x python main.py
+
+tdd: ## Run tests with a watcher
+	CI=1 ptw -- -sx
+
+test: ## Run test suite
+	CI=1 pytest --cov
+
+fixtures: tests/fixtures/ad-rss.xml
+
+tests/fixtures/ad-rss.xml:
+	curl --silent https://www.architecturaldigest.com/feed/rss > $@
