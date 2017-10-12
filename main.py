@@ -1,7 +1,9 @@
+import json
 import os
 from xml.etree import ElementTree as ET
 
 from aiohttp import web
+from lxml.html import parse as html5_parse
 import aiohttp
 
 
@@ -24,6 +26,26 @@ def get_item_details(item):
     }
 
 
+def build_item(tree):
+    data = {
+        'title': '',
+        # 'link' This will come from the original RSS item
+        'description': '',
+        # 'guid' This will come from the original RSS item
+    }
+
+    jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
+    if jsonld_elem is not None:
+        jsonld = json.loads(jsonld_elem.text)
+        data['title'] = jsonld['headline']
+        data['description'] = """
+            <img src="{thumbnailUrl}" style="float: left; margin-right: 5px;" />
+            <p>{description}</p>
+        """.format(**jsonld)
+
+    return data
+
+
 async def refeed(request):
     try:
         feed_url = request.GET['feed']
@@ -31,13 +53,18 @@ async def refeed(request):
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
     try:
-        async with aiohttp.ClientSession() as session:  # headers=
+        pass_thru_headers = {}
+        async with aiohttp.ClientSession() as session:  # TODO headers=
             resp = await session.get(feed_url)
+            # Should be: application/rss+xml
+            pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
             text = await resp.text()
-        tree = ET.fromstring(text)
-        for item in tree.findall('.//item'):
-            item_details = get_item_details(item)
-        return web.Response(text=text)
+            tree = ET.fromstring(text)
+            for item in tree.findall('.//item'):
+                item_details = get_item_details(item)
+                # resp = await session.get(item_details['link'))
+                # article_tree = html5_parse(resp)
+        return web.Response(text=text, headers=pass_thru_headers)
     except ValueError as e:
         return web.Response(status=400, text=str(e))
 

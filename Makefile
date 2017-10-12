@@ -18,7 +18,10 @@ tdd: ## Run tests with a watcher
 test: ## Run test suite
 	CI=1 pytest --cov
 
-fixtures: tests/fixtures/ad-rss.xml
+fixtures: tests/fixtures/ad-rss.xml tests/fixtures/article.html
 
 tests/fixtures/ad-rss.xml:
 	curl --silent https://www.architecturaldigest.com/feed/rss > $@
+
+tests/fixtures/article.html:
+	curl --silent https://www.architecturaldigest.com/story/why-high-gloss-paint-should-be-on-your-radar > $@
