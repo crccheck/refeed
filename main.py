@@ -5,6 +5,9 @@ from xml.etree import ElementTree as ET
 from aiohttp import web
 from lxml.html import document_fromstring
 import aiohttp
+import redis
+
+cache = None
 
 
 def get_feed_details(tree):
@@ -52,6 +55,8 @@ async def refeed(request):
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
     pass_thru_headers = {}
+    all_details = []
+
     async with aiohttp.ClientSession() as session:  # TODO headers=
         try:
             resp = await session.get(feed_url)
@@ -60,12 +65,26 @@ async def refeed(request):
         pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
         # assert pass_thru_headers['Content-Type'] == application/rss+xml
         tree = ET.fromstring(await resp.text())
-        for item in tree.findall('.//item')[:1]:  # DEBUG enable for all items after Redis
-            item_details = get_item_details(item)
-            resp = await session.get(item_details['link'])
-            # XML can take a file-like object but aiohttp's read() isn't file-like
-            article_tree = document_fromstring(await resp.read())
-            data = build_item(article_tree)
+        items = tree.findall('.//item')[:1]  # DEBUG enable for all items after Redis
+        # Populate all_details from cache
+
+        all_details = [get_item_details(x) for x in items]
+        cache_keys = [feed_url + '|' + x['guid'] for x in all_details]
+        all_contexts = cache.mget(*cache_keys)
+        print(all_contexts)
+
+        for idx, item in enumerate(items):
+            context = all_contexts[idx]
+            if context is None:
+                resp = await session.get(all_details[idx]['link'])
+                # XML can take a file-like object but aiohttp's read() isn't file-like
+                article_tree = document_fromstring(await resp.read())
+                data = build_item(article_tree)
+                all_contexts[idx] = data
+                cache.set(cache_keys[idx], json.dumps(data))
+            else:
+                data = json.loads(context)
+
             for k, v in data.items():
                 node = item.find('./' + k)
                 node.text = data[k]
@@ -76,5 +95,6 @@ app = web.Application()
 app.router.add_get('/refeed/', refeed)
 
 if not os.getenv('CI'):
+    cache = redis.StrictRedis()  # TODO
     port = os.getenv('PORT', 8080)
     web.run_app(app, port=port)
