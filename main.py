@@ -73,17 +73,15 @@ async def refeed(request):
         # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
         cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
-        cached_contexts = cache.mget(*cache_keys)
+        cached_contexts = [json.loads(x) if x else None for x in cache.mget(*cache_keys)]
 
-        for item, cache_key, raw_context, details in zip(items, cache_keys, cached_contexts, all_details):
-            if raw_context is None:
+        for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
+            if context is None:
                 resp = await session.get(details['link'])
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
                 context = build_item_context(article_tree)
                 raw_context_to_save[cache_key] = json.dumps(context)
-            else:
-                context = json.loads(raw_context)
 
             # Re-write XML
             for k, v in context.items():
@@ -92,7 +90,7 @@ async def refeed(request):
 
     if raw_context_to_save:
         print('Saving: %d' % len(raw_context_to_save))
-        cache.mset(raw_context_to_save)  # TODO make this async
+        cache.mset(raw_context_to_save)  # WISHLIST make this async
 
     return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
