@@ -29,7 +29,7 @@ def get_item_details(item):
     }
 
 
-def build_item(tree):
+def build_item_context(tree):
     """
     Build the context needed to replace item fields
     """
@@ -80,7 +80,7 @@ async def refeed(request):
                 resp = await session.get(all_details[idx]['link'])
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
-                context = build_item(article_tree)
+                context = build_item_context(article_tree)
                 cached_details[idx] = context
                 cache.set(cache_keys[idx], json.dumps(context))  # TODO make this async
             else:

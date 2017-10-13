@@ -5,7 +5,7 @@ import pytest
 from lxml.html import parse as html_parse
 
 from ..main import (
-    build_item,
+    build_item_context,
     get_feed_details,
     get_item_details,
 )
@@ -36,6 +36,6 @@ def test_get_item_details(tree):
 
 
 def test_build_item(html_tree):
-    item = build_item(html_tree)
+    item = build_item_context(html_tree)
     assert 'https://media.architecturaldigest.com/photos/59dfb79cc9ed4c222543c068/master/pass/high-gloss-paint-1.jpg' in item['description']
     assert '' in item['description']
