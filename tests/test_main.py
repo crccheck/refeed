@@ -6,7 +6,6 @@ from lxml.html import parse as html_parse
 
 from ..main import (
     build_item_context,
-    get_feed_details,
     get_item_details,
 )
 
@@ -21,11 +20,6 @@ def tree():
 def html_tree():
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'article.html')
     return html_parse(path)
-
-
-def test_get_feed_details(tree):
-    details = get_feed_details(tree)
-    assert details['link'] == 'https://www.architecturaldigest.com'
 
 
 def test_get_item_details(tree):

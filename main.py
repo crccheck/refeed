@@ -10,18 +10,6 @@ import redis
 cache = None
 
 
-def get_feed_details(tree):
-    """
-    Get the details about the feed
-
-    WIP not sure what to do with this information yet
-    """
-    elems = tree.find('./channel').getchildren()
-    children = [x for x in elems if x.tag != 'item']
-    details = {x.tag: x.text for x in children}
-    return details
-
-
 def get_item_details(item):
     return {
         'link': item.find('./link').text,
@@ -73,6 +61,7 @@ async def refeed(request):
         # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
         cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
+        print(cache_keys)
         cached_contexts = [json.loads(x) if x else None for x in cache.mget(*cache_keys)]
 
         for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
