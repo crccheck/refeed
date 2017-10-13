@@ -64,7 +64,6 @@ async def refeed(request):
         # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
         cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
-        print(cache_keys)
         cached_contexts = [json.loads(x) if x else None for x in cache.mget(*cache_keys)]
 
         for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
@@ -80,9 +79,13 @@ async def refeed(request):
                 node = item.find('./' + k)
                 node.text = context[k]
 
+    pipeline = cache.pipeline(transaction=False)
     if raw_context_to_save:
         print('Saving: %d' % len(raw_context_to_save))
-        cache.mset(raw_context_to_save)  # WISHLIST make this async
+        pipeline.mset(raw_context_to_save)
+    for x in cache_key:
+        pipeline.expire(x, 86400)
+    pipeline.execute()  # WISHLIST make this async
 
     return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
