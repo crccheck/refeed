@@ -58,6 +58,9 @@ async def refeed(request):
         tree = ET.fromstring(await resp.text())
         items = tree.findall('.//item')
 
+        if not items:
+            return web.Response(status=400, text='No items found')
+
         # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
         cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
