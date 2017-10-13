@@ -5,18 +5,9 @@ from xml.etree import ElementTree as ET
 from aiohttp import web
 from lxml.html import document_fromstring
 import aiohttp
+import redis
 
-
-def get_feed_details(tree):
-    """
-    Get the details about the feed
-
-    WIP not sure what to do with this information yet
-    """
-    elems = tree.find('./channel').getchildren()
-    children = [x for x in elems if x.tag != 'item']
-    details = {x.tag: x.text for x in children}
-    return details
+cache = None
 
 
 def get_item_details(item):
@@ -26,7 +17,7 @@ def get_item_details(item):
     }
 
 
-def build_item(tree):
+def build_item_context(tree):
     """
     Build the context needed to replace item fields
     """
@@ -51,24 +42,50 @@ async def refeed(request):
     except KeyError:
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
-    pass_thru_headers = {}
+    all_details = []
+    raw_context_to_save = {}
+
     async with aiohttp.ClientSession() as session:  # TODO headers=
         try:
             resp = await session.get(feed_url)
         except ValueError as e:
             return web.Response(status=400, text=str(e))
-        pass_thru_headers['Content-Type'] = resp.headers['Content-Type']
+
+        pass_thru_headers = {
+            'Content-Type': resp.headers['Content-Type'],
+        }
         # assert pass_thru_headers['Content-Type'] == application/rss+xml
         tree = ET.fromstring(await resp.text())
-        for item in tree.findall('.//item')[:1]:  # DEBUG enable for all items after Redis
-            item_details = get_item_details(item)
-            resp = await session.get(item_details['link'])
-            # XML can take a file-like object but aiohttp's read() isn't file-like
-            article_tree = document_fromstring(await resp.read())
-            data = build_item(article_tree)
-            for k, v in data.items():
+        items = tree.findall('.//item')
+        if not items:
+            return web.Response(status=400, text='No items found')
+
+        # Populate all_details from cache
+        all_details = [get_item_details(x) for x in items]
+        cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
+        cached_contexts = [json.loads(x) if x else None for x in cache.mget(*cache_keys)]
+
+        for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
+            if context is None:
+                resp = await session.get(details['link'])
+                # XML can take a file-like object but aiohttp's read() isn't file-like
+                article_tree = document_fromstring(await resp.read())
+                context = build_item_context(article_tree)
+                raw_context_to_save[cache_key] = json.dumps(context)
+
+            # Re-write XML
+            for k, v in context.items():
                 node = item.find('./' + k)
-                node.text = data[k]
+                node.text = context[k]
+
+    pipeline = cache.pipeline(transaction=False)
+    if raw_context_to_save:
+        print('Saving: %d' % len(raw_context_to_save))
+        pipeline.mset(raw_context_to_save)
+    for x in cache_key:
+        pipeline.expire(x, 86400)
+    pipeline.execute()  # WISHLIST make this async
+
     return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
 
@@ -76,5 +93,7 @@ app = web.Application()
 app.router.add_get('/refeed/', refeed)
 
 if not os.getenv('CI'):
+    redis_url = os.getenv('REDIS_URL', 'redis://')
+    cache = redis.StrictRedis().from_url(redis_url)
     port = os.getenv('PORT', 8080)
     web.run_app(app, port=port)

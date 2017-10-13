@@ -2,6 +2,7 @@ aiodns
 aiohttp
 cchardet
 lxml
+redis
 
 # dev
 flake8

@@ -5,8 +5,7 @@ import pytest
 from lxml.html import parse as html_parse
 
 from ..main import (
-    build_item,
-    get_feed_details,
+    build_item_context,
     get_item_details,
 )
 
@@ -23,11 +22,6 @@ def html_tree():
     return html_parse(path)
 
 
-def test_get_feed_details(tree):
-    details = get_feed_details(tree)
-    assert details['link'] == 'https://www.architecturaldigest.com'
-
-
 def test_get_item_details(tree):
     item = tree.find('.//item')
     details = get_item_details(item)
@@ -36,6 +30,6 @@ def test_get_item_details(tree):
 
 
 def test_build_item(html_tree):
-    item = build_item(html_tree)
+    item = build_item_context(html_tree)
     assert 'https://media.architecturaldigest.com/photos/59dfb79cc9ed4c222543c068/master/pass/high-gloss-paint-1.jpg' in item['description']
     assert '' in item['description']
