@@ -95,5 +95,5 @@ app.router.add_get('/refeed/', refeed)
 if not os.getenv('CI'):
     redis_url = os.getenv('REDIS_URL', 'redis://')
     cache = redis.StrictRedis().from_url(redis_url)
-    port = os.getenv('PORT', 8080)
+    port = int(os.getenv('PORT', 8080))
     web.run_app(app, port=port)
