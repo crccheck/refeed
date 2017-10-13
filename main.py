@@ -73,16 +73,15 @@ async def refeed(request):
         # Populate all_details from cache
         all_details = [get_item_details(x) for x in items]
         cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
-        cached_details = cache.mget(*cache_keys)
+        cached_contexts = cache.mget(*cache_keys)
 
-        for idx, item in enumerate(items):
-            raw_context = cached_details[idx]
+        for item, cache_key, raw_context, details in zip(items, cache_keys, cached_contexts, all_details):
             if raw_context is None:
-                resp = await session.get(all_details[idx]['link'])
+                resp = await session.get(details['link'])
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
                 context = build_item_context(article_tree)
-                raw_context_to_save[cache_keys[idx]] = json.dumps(context)
+                raw_context_to_save[cache_key] = json.dumps(context)
             else:
                 context = json.loads(raw_context)
 
