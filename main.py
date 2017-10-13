@@ -57,7 +57,6 @@ async def refeed(request):
         # assert pass_thru_headers['Content-Type'] == application/rss+xml
         tree = ET.fromstring(await resp.text())
         items = tree.findall('.//item')
-
         if not items:
             return web.Response(status=400, text='No items found')
 
