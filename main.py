@@ -55,6 +55,7 @@ async def refeed(request):
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
     all_details = []
+    raw_context_to_save = {}
 
     async with aiohttp.ClientSession() as session:  # TODO headers=
         try:
@@ -81,8 +82,7 @@ async def refeed(request):
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
                 context = build_item_context(article_tree)
-                cached_details[idx] = context
-                cache.set(cache_keys[idx], json.dumps(context))  # TODO make this async
+                raw_context_to_save[cache_keys[idx]] = json.dumps(context)
             else:
                 context = json.loads(raw_context)
 
@@ -90,6 +90,11 @@ async def refeed(request):
             for k, v in context.items():
                 node = item.find('./' + k)
                 node.text = context[k]
+
+    if raw_context_to_save:
+        print('Saving: %d' % len(raw_context_to_save))
+        cache.mset(raw_context_to_save)  # TODO make this async
+
     return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
 
 
