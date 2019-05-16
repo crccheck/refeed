@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from xml.etree import ElementTree as ET
 
@@ -8,6 +9,9 @@ import aiohttp
 import redis
 
 cache = None
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def get_item_details(item):
@@ -44,6 +48,7 @@ async def refeed(request):
 
     all_details = []
     raw_context_to_save = {}
+    logger.info('Processing feed: %s', feed_url)
 
     async with aiohttp.ClientSession() as session:  # TODO headers=
         try:
@@ -63,6 +68,7 @@ async def refeed(request):
 
         for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
             if context is None:
+                logger.info('Fetching: %s', details['link'])
                 resp = await session.get(details['link'])
                 # XML can take a file-like object but aiohttp's read() isn't file-like
                 article_tree = document_fromstring(await resp.read())
