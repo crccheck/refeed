@@ -1,8 +1,11 @@
-FROM python:3.6-alpine
+FROM python:3.7-alpine
+LABEL maintainer="Chris <c@crccheck.com>"
 
 RUN apk add --no-cache --update \
       # cchardet and lxml
       g++ \
+      # aiodns
+      libffi-dev \
       # lxml
       musl-dev libxml2-dev libxslt-dev
 
@@ -13,5 +16,6 @@ COPY . /app
 
 EXPOSE 8080
 ENV PORT 8080
+HEALTHCHECK CMD nc -z localhost 8080
 
 CMD python main.py
