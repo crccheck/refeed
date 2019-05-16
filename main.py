@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+DESCRIPTION_FMT = """
+<img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
+<p>{description}</p>
+""".format
+
+
 def get_item_details(item):
     return {
         'link': item.find('./link').text,
@@ -32,10 +38,7 @@ def build_item_context(tree):
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
     if jsonld_elem is not None:
         jsonld = json.loads(jsonld_elem.text)
-        data['description'] = """
-            <img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
-            <p>{description}</p>
-        """.format(**jsonld)
+        data['description'] = DESCRIPTION_FMT(**jsonld)
 
     return data
 
