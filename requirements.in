@@ -1,6 +1,7 @@
 # Optional, speeds up aiohttp
 aiodns
 aiohttp
+async_lru
 # Optional, speeds up aiohttp
 cchardet
 lxml
