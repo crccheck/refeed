@@ -53,6 +53,15 @@ async def refeed(request):
     logger.info('Processing feed: %s', feed_url)
 
     async with aiohttp.ClientSession() as session:  # TODO headers=
+        @lru_cache(maxsize=120)
+        async def fetch_seo_context(url: str):
+            logger.info('Fetching: %s', url)
+            resp = await session.get(url)
+            # XML can take a file-like object but aiohttp's read() isn't file-like
+            article_tree = document_fromstring(await resp.read())
+            print('uncached!', url)
+            return build_item_context(article_tree)
+
         try:
             resp = await session.get(feed_url)
         except ValueError as e:
@@ -65,11 +74,7 @@ async def refeed(request):
 
         for item in items:
             details = get_item_details(item)
-            logger.info('Fetching: %s', details['link'])
-            resp = await session.get(details['link'])
-            # XML can take a file-like object but aiohttp's read() isn't file-like
-            article_tree = document_fromstring(await resp.read())
-            context = build_item_context(article_tree)
+            context = await fetch_seo_context(details['link'])
 
             # Re-write XML
             for k, v in context.items():
