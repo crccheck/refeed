@@ -1,5 +1,7 @@
+# Optional, speeds up aiohttp
 aiodns
 aiohttp
+# Optional, speeds up aiohttp
 cchardet
 lxml
 redis
