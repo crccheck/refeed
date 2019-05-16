@@ -3,6 +3,8 @@ FROM python:3.7-alpine
 RUN apk add --no-cache --update \
       # cchardet and lxml
       g++ \
+      # aiodns
+      libffi-dev \
       # lxml
       musl-dev libxml2-dev libxslt-dev
 
