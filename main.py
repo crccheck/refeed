@@ -1,13 +1,13 @@
 import json
 import logging
 import os
-from functools import lru_cache
 from xml.etree import ElementTree as ET
 from typing import Dict
 
-from aiohttp import web
-from lxml.html import document_fromstring
 import aiohttp
+from aiohttp import web
+from async_lru import alru_cache
+from lxml.html import document_fromstring
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -44,6 +44,17 @@ def build_item_context(tree) -> Dict:
     return data
 
 
+@alru_cache(maxsize=120)
+async def fetch_seo_context(url: str):
+    logger.info('Fetching: %s', url)
+    async with aiohttp.ClientSession() as session:  # TODO headers=
+        resp = await session.get(url)
+        # XML can take a file-like object but aiohttp's read() isn't file-like
+        article_tree = document_fromstring(await resp.read())
+        print('uncached!', url)
+        return build_item_context(article_tree)
+
+
 async def refeed(request):
     try:
         feed_url = request.query['feed']
@@ -52,16 +63,7 @@ async def refeed(request):
 
     logger.info('Processing feed: %s', feed_url)
 
-    async with aiohttp.ClientSession() as session:  # TODO headers=
-        @lru_cache(maxsize=120)
-        async def fetch_seo_context(url: str):
-            logger.info('Fetching: %s', url)
-            resp = await session.get(url)
-            # XML can take a file-like object but aiohttp's read() isn't file-like
-            article_tree = document_fromstring(await resp.read())
-            print('uncached!', url)
-            return build_item_context(article_tree)
-
+    async with aiohttp.ClientSession() as session:
         try:
             resp = await session.get(feed_url)
         except ValueError as e:
@@ -80,6 +82,8 @@ async def refeed(request):
             for k, v in context.items():
                 node = item.find('./' + k)
                 node.text = context[k]
+
+    print(fetch_seo_context.cache_info())
 
     return web.Response(
         text=ET.tostring(tree).decode('utf-8'),
