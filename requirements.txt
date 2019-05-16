@@ -7,6 +7,7 @@
 aiodns==2.0.0
 aiohttp==3.5.4
 argh==0.26.2              # via watchdog
+async-lru==1.0.2
 async-timeout==3.0.1      # via aiohttp
 atomicwrites==1.3.0       # via pytest
 attrs==19.1.0             # via aiohttp, pytest
@@ -34,7 +35,6 @@ pytest-cov==2.7.1
 pytest-watch==4.2.0
 pytest==4.5.0
 pyyaml==5.1               # via watchdog
-redis==3.2.1
 six==1.12.0               # via pytest
 watchdog==0.9.0           # via pytest-watch
 wcwidth==0.1.7            # via pytest

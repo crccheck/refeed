@@ -6,7 +6,6 @@ from lxml.html import parse as html_parse
 
 from ..main import (
     build_item_context,
-    get_item_details,
 )
 
 
@@ -20,13 +19,6 @@ def tree():
 def html_tree():
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'article.html')
     return html_parse(path)
-
-
-def test_get_item_details(tree):
-    item = tree.find('.//item')
-    details = get_item_details(item)
-    assert details['link'] == 'https://www.architecturaldigest.com/story/why-high-gloss-paint-should-be-on-your-radar'
-    assert details['guid'] == '59df9cf1f7610e67d7f16a0b'
 
 
 def test_build_item(html_tree):

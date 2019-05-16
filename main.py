@@ -1,23 +1,26 @@
 import json
+import logging
 import os
 from xml.etree import ElementTree as ET
+from typing import Dict
 
-from aiohttp import web
-from lxml.html import document_fromstring
 import aiohttp
-import redis
+from aiohttp import web
+from async_lru import alru_cache
+from lxml.html import document_fromstring, HtmlElement
 
-cache = None
-
-
-def get_item_details(item):
-    return {
-        'link': item.find('./link').text,
-        'guid': item.find('./guid').text,
-    }
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-def build_item_context(tree):
+DESCRIPTION_FMT = """
+<img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
+<p>{description}</p>
+""".format
+
+
+def build_item_context(tree: HtmlElement) -> Dict:
     """
     Build the context needed to replace item fields
     """
@@ -28,12 +31,19 @@ def build_item_context(tree):
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
     if jsonld_elem is not None:
         jsonld = json.loads(jsonld_elem.text)
-        data['description'] = """
-            <img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
-            <p>{description}</p>
-        """.format(**jsonld)
+        data['description'] = DESCRIPTION_FMT(**jsonld)
 
     return data
+
+
+@alru_cache(maxsize=120)
+async def fetch_seo_context(url: str, guid: str) -> Dict:
+    logger.info('Fetching url: %s guid: %s', url, guid)
+    async with aiohttp.ClientSession() as session:  # TODO headers=
+        resp = await session.get(url)
+        # XML can take a file-like object but aiohttp's read() isn't file-like
+        article_tree = document_fromstring(await resp.read())
+        return build_item_context(article_tree)
 
 
 async def refeed(request):
@@ -42,10 +52,9 @@ async def refeed(request):
     except KeyError:
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
-    all_details = []
-    raw_context_to_save = {}
+    logger.info('Processing feed: %s', feed_url)
 
-    async with aiohttp.ClientSession() as session:  # TODO headers=
+    async with aiohttp.ClientSession() as session:
         try:
             resp = await session.get(feed_url)
         except ValueError as e:
@@ -56,31 +65,17 @@ async def refeed(request):
         if not items:
             return web.Response(status=400, text='No items found')
 
-        # Populate all_details from cache
-        all_details = [get_item_details(x) for x in items]
-        cache_keys = ['refeed:' + feed_url + ':' + x['guid'] for x in all_details]
-        cached_contexts = [json.loads(x) if x else None for x in cache.mget(*cache_keys)]
-
-        for item, cache_key, context, details in zip(items, cache_keys, cached_contexts, all_details):
-            if context is None:
-                resp = await session.get(details['link'])
-                # XML can take a file-like object but aiohttp's read() isn't file-like
-                article_tree = document_fromstring(await resp.read())
-                context = build_item_context(article_tree)
-                raw_context_to_save[cache_key] = json.dumps(context)
+        for item in items:
+            url = item.find('./link').text
+            guid = item.find('./guid').text
+            context = await fetch_seo_context(url, guid)
 
             # Re-write XML
             for k, v in context.items():
                 node = item.find('./' + k)
                 node.text = context[k]
 
-    pipeline = cache.pipeline(transaction=False)
-    if raw_context_to_save:
-        print('Saving: %d' % len(raw_context_to_save))
-        pipeline.mset(raw_context_to_save)
-    for x in cache_key:
-        pipeline.expire(x, 86400)
-    pipeline.execute()  # WISHLIST make this async
+    logger.info(fetch_seo_context.cache_info())
 
     return web.Response(
         text=ET.tostring(tree).decode('utf-8'),
@@ -91,7 +86,5 @@ app = web.Application()
 app.router.add_get('/refeed/', refeed)
 
 if not os.getenv('CI'):
-    redis_url = os.getenv('REDIS_URL', 'redis://')
-    cache = redis.StrictRedis().from_url(redis_url)
     port = int(os.getenv('PORT', 8080))
     web.run_app(app, port=port)
