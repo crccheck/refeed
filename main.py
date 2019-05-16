@@ -63,9 +63,8 @@ async def refeed(request):
         if not items:
             return web.Response(status=400, text='No items found')
 
-        all_details = [get_item_details(x) for x in items]
-
-        for item, details in zip(items, all_details):
+        for item in items:
+            details = get_item_details(item)
             logger.info('Fetching: %s', details['link'])
             resp = await session.get(details['link'])
             # XML can take a file-like object but aiohttp's read() isn't file-like
