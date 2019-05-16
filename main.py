@@ -38,7 +38,7 @@ def build_item_context(tree):
 
 async def refeed(request):
     try:
-        feed_url = request.GET['feed']
+        feed_url = request.query['feed']
     except KeyError:
         return web.Response(status=400, text='Must supply a ?feed=<rss url>')
 
