@@ -37,13 +37,12 @@ def build_item_context(tree: HtmlElement) -> Dict:
 
 
 @alru_cache(maxsize=120)
-async def fetch_seo_context(url: str) -> Dict:
-    logger.info('Fetching: %s %s', url)
+async def fetch_seo_context(url: str, guid: str) -> Dict:
+    logger.info('Fetching url: %s guid: %s', url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=
         resp = await session.get(url)
         # XML can take a file-like object but aiohttp's read() isn't file-like
         article_tree = document_fromstring(await resp.read())
-        print('uncached!', url)
         return build_item_context(article_tree)
 
 
@@ -67,9 +66,9 @@ async def refeed(request):
             return web.Response(status=400, text='No items found')
 
         for item in items:
-            # guid = item.find('./guid').text
             url = item.find('./link').text
-            context = await fetch_seo_context(url)
+            guid = item.find('./guid').text
+            context = await fetch_seo_context(url, guid)
 
             # Re-write XML
             for k, v in context.items():
