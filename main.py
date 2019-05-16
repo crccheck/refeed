@@ -20,14 +20,6 @@ DESCRIPTION_FMT = """
 """.format
 
 
-def get_item_details(item: ET.Element) -> Dict:
-    # Should I return a namedtuple?
-    return {
-        'link': item.find('./link').text,
-        'guid': item.find('./guid').text,
-    }
-
-
 def build_item_context(tree: HtmlElement) -> Dict:
     """
     Build the context needed to replace item fields
@@ -46,7 +38,7 @@ def build_item_context(tree: HtmlElement) -> Dict:
 
 @alru_cache(maxsize=120)
 async def fetch_seo_context(url: str) -> Dict:
-    logger.info('Fetching: %s', url)
+    logger.info('Fetching: %s %s', url)
     async with aiohttp.ClientSession() as session:  # TODO headers=
         resp = await session.get(url)
         # XML can take a file-like object but aiohttp's read() isn't file-like
@@ -75,15 +67,16 @@ async def refeed(request):
             return web.Response(status=400, text='No items found')
 
         for item in items:
-            details = get_item_details(item)
-            context = await fetch_seo_context(details['link'])
+            # guid = item.find('./guid').text
+            url = item.find('./link').text
+            context = await fetch_seo_context(url)
 
             # Re-write XML
             for k, v in context.items():
                 node = item.find('./' + k)
                 node.text = context[k]
 
-    print(fetch_seo_context.cache_info())
+    logger.info(fetch_seo_context.cache_info())
 
     return web.Response(
         text=ET.tostring(tree).decode('utf-8'),
