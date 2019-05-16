@@ -1,7 +1,9 @@
 import json
 import logging
 import os
+from functools import lru_cache
 from xml.etree import ElementTree as ET
+from typing import Dict
 
 from aiohttp import web
 from lxml.html import document_fromstring
@@ -20,14 +22,14 @@ DESCRIPTION_FMT = """
 """.format
 
 
-def get_item_details(item):
+def get_item_details(item: ET.Element) -> Dict:
     return {
         'link': item.find('./link').text,
         'guid': item.find('./guid').text,
     }
 
 
-def build_item_context(tree):
+def build_item_context(tree) -> Dict:
     """
     Build the context needed to replace item fields
     """
