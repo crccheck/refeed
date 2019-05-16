@@ -3,9 +3,20 @@ Refeed
 
 [![Build Status](https://travis-ci.org/crccheck/refeed.svg?branch=master)](https://travis-ci.org/crccheck/refeed)
 
-Re-create an RSS feed based on SEO/Social meta.
+Re-create an RSS feed based on SEO/Social media metadata.
 
-RSS feeds for many sites exist, but little effort is made to design them. SEO/
-and social media metadata are often added, and lots of effort is made there.
-
+RSS feeds for many sites exist, but little effort is made to design them.
+However, a lot of effort is put into adding metadata for SEO and social media.
 This takes an existing RSS feed and re-creates it using social media metadata.
+
+
+Example
+-------
+
+```
+docker run --rm -it -p 8080:8080 crccheck/refeed
+```
+
+Then compare:
+* https://www.architecturaldigest.com/feed/rss
+* http://localhost:8080/refeed/?feed=https://www.architecturaldigest.com/feed/rss
