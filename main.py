@@ -7,7 +7,7 @@ from typing import Dict
 import aiohttp
 from aiohttp import web
 from async_lru import alru_cache
-from lxml.html import document_fromstring
+from lxml.html import document_fromstring, HtmlElement
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def get_item_details(item: ET.Element) -> Dict:
     }
 
 
-def build_item_context(tree) -> Dict:
+def build_item_context(tree: HtmlElement) -> Dict:
     """
     Build the context needed to replace item fields
     """
@@ -45,7 +45,7 @@ def build_item_context(tree) -> Dict:
 
 
 @alru_cache(maxsize=120)
-async def fetch_seo_context(url: str):
+async def fetch_seo_context(url: str) -> Dict:
     logger.info('Fetching: %s', url)
     async with aiohttp.ClientSession() as session:  # TODO headers=
         resp = await session.get(url)
