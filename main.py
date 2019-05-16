@@ -51,10 +51,6 @@ async def refeed(request):
         except ValueError as e:
             return web.Response(status=400, text=str(e))
 
-        pass_thru_headers = {
-            'Content-Type': resp.headers['Content-Type'],
-        }
-        # assert pass_thru_headers['Content-Type'] == application/rss+xml
         tree = ET.fromstring(await resp.text())
         items = tree.findall('.//item')
         if not items:
@@ -86,7 +82,9 @@ async def refeed(request):
         pipeline.expire(x, 86400)
     pipeline.execute()  # WISHLIST make this async
 
-    return web.Response(text=ET.tostring(tree).decode('utf-8'), headers=pass_thru_headers)
+    return web.Response(
+        text=ET.tostring(tree).decode('utf-8'),
+        content_type='application/rss+xml')
 
 
 app = web.Application()
