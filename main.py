@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+CACHE_SIZE = int(os.environ.get('CACHE_SIZE', 500))
 DESCRIPTION_FMT = """
 <img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
 <p>{description}</p>
@@ -36,7 +37,7 @@ def build_item_context(tree: HtmlElement) -> Dict:
     return data
 
 
-@alru_cache(maxsize=120)
+@alru_cache(maxsize=CACHE_SIZE)
 async def fetch_seo_context(url: str, guid: str) -> Dict:
     logger.info('Fetching url: %s guid: %s', url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=

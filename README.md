@@ -10,6 +10,12 @@ However, a lot of effort is put into adding metadata for SEO and social media.
 This takes an existing RSS feed and re-creates it using social media metadata.
 
 
+Environment Configuration
+-------------------------
+
+* `CACHE_SIZE` -- (default: 500) How many articles to keep cached. Should be about 30 * number_of_feeds
+
+
 Example
 -------
 
