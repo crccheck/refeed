@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-CACHE_SIZE = int(os.environ.get('CACHE_SIZE', 120))
+CACHE_SIZE = int(os.environ.get('CACHE_SIZE', 500))
 DESCRIPTION_FMT = """
 <img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
 <p>{description}</p>

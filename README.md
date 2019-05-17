@@ -13,7 +13,7 @@ This takes an existing RSS feed and re-creates it using social media metadata.
 Environment Configuration
 -------------------------
 
-* `CACHE_SIZE` -- How many articles to keep cached. Should be about 30 * number_of_feeds
+* `CACHE_SIZE` -- (default: 500) How many articles to keep cached. Should be about 30 * number_of_feeds
 
 
 Example
