@@ -25,3 +25,6 @@ tests/fixtures/ad-rss.xml:
 
 tests/fixtures/article.html:
 	curl --silent https://www.architecturaldigest.com/story/why-high-gloss-paint-should-be-on-your-radar > $@
+
+tests/fixtures/gallery.html:
+	curl --silent https://www.architecturaldigest.com/gallery/dramatic-history-londons-underground > $@
