@@ -33,8 +33,8 @@ def build_item_context(tree: HtmlElement) -> Dict:
     if jsonld_elem is not None:
         jsonld = json.loads(jsonld_elem.text)
         if 'description' not in jsonld:
-            # TODO
-            pass
+            description_meta = tree.find('./head/meta[@name="description"]')
+            jsonld['description'] = description_meta.get('content')
         # from pprint import pprint
         # pprint(jsonld)
         data['description'] = DESCRIPTION_FMT(**jsonld)
