@@ -1,8 +1,6 @@
 Refeed
 ======
 
-[![Build Status](https://travis-ci.org/crccheck/refeed.svg?branch=master)](https://travis-ci.org/crccheck/refeed)
-
 Re-create an RSS feed based on SEO/Social media metadata.
 
 RSS feeds for many sites exist, but little effort is made to design them.
