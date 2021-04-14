@@ -66,7 +66,7 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
         tree = ET.fromstring(await resp.text())
         items = tree.findall(".//item")
         if not items:
-            return web.Response(status=400, text="No items found")
+            return web.Response(status=400, text="No feed items found")
 
         for item in items:
             url = item.find("./link").text
@@ -76,6 +76,7 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
             # Re-write XML
             for k, v in context.items():
                 node = item.find("./" + k)
+                assert node is not None
                 node.text = context[k]
 
     logger.info(fetch_seo_context.cache_info())
