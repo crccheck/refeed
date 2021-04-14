@@ -5,6 +5,7 @@ from xml.etree import ElementTree as ET
 from typing import Dict
 
 import aiohttp
+import aiohttp.web_request
 from aiohttp import web
 from async_lru import alru_cache
 from lxml.html import document_fromstring, HtmlElement
@@ -48,7 +49,7 @@ async def fetch_seo_context(url: str, guid: str) -> Dict:
         return build_item_context(article_tree)
 
 
-async def refeed(request):
+async def refeed(request: aiohttp.web_request.Request) -> web.Response:
     try:
         feed_url = request.query["feed"]
     except KeyError:
@@ -65,7 +66,7 @@ async def refeed(request):
         tree = ET.fromstring(await resp.text())
         items = tree.findall(".//item")
         if not items:
-            return web.Response(status=400, text="No items found")
+            return web.Response(status=400, text="No feed items found")
 
         for item in items:
             url = item.find("./link").text
@@ -75,6 +76,7 @@ async def refeed(request):
             # Re-write XML
             for k, v in context.items():
                 node = item.find("./" + k)
+                assert node is not None
                 node.text = context[k]
 
     logger.info(fetch_seo_context.cache_info())
@@ -84,8 +86,13 @@ async def refeed(request):
     )
 
 
+async def robotstxt(request: aiohttp.web_request.Request) -> web.Response:
+    return web.Response(text="User-agent: *\nDisallow: /", content_type="text/plain")
+
+
 app = web.Application()
 app.router.add_get("/refeed/", refeed)
+app.router.add_get("/robots.txt", robotstxt)
 
 if not os.getenv("CI"):
     port = int(os.getenv("PORT", 8080))
