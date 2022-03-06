@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM python:3.10-alpine
 LABEL maintainer="Chris <c@crccheck.com>"
 
 ENV POETRY_VERSION 1.1.5

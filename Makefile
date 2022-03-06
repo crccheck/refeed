@@ -23,3 +23,9 @@ tests/fixtures/article.html:
 
 tests/fixtures/gallery.html:
 	curl --silent https://www.architecturaldigest.com/gallery/dramatic-history-londons-underground > $@
+
+docker/build:
+	docker build --tag crccheck/refeed .
+
+docker/run:
+	docker run -i -t --rm -p 8080:8080 crccheck/refeed
