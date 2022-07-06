@@ -10,7 +10,7 @@ aiodns = "^3.0.0"
 aiohttp = "^3.7.3"
 async_lru = "^1.0.2"
 cchardet = "^2.1.7"
-lxml = "^4.6.2"
+lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
