@@ -12,8 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: "3.10"
       - run: pip install ruff
       - run: ruff check .
       - run: ruff format --check .
@@ -25,7 +23,5 @@ jobs:
         with:
           enable-cache: true
       - uses: actions/setup-python@v3
-        with:
-          python-version: "3.10"
       - run: uv sync
       - run: uv run make test
