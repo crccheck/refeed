@@ -9,25 +9,19 @@ from ..main import build_item_context
 
 @pytest.fixture
 def tree():
-    path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "ad-rss.xml"
-    )
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fixtures", "ad-rss.xml")
     return ET.parse(path).getroot()
 
 
 @pytest.fixture
 def html_article_tree():
-    path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "article.html"
-    )
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fixtures", "article.html")
     return html_parse(path)
 
 
 @pytest.fixture
 def html_gallery_tree():
-    path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "gallery.html"
-    )
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fixtures", "gallery.html")
     return html_parse(path)
 
 

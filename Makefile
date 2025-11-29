@@ -7,6 +7,11 @@ install: ## Install requirements
 dev: ## Run dev environment with a watcher
 	nodemon -e py -x python main.py
 
+lint: ## Run linter
+	ruff check .
+	ruff format --check .
+	mypy .
+
 tdd: ## Run tests with a watcher
 	CI=1 ptw -- -sx
 
