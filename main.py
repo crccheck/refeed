@@ -1,14 +1,14 @@
 import json
 import logging
 import os
+from typing import Any
 from xml.etree import ElementTree as ET
-from typing import Dict
 
 import aiohttp
 import aiohttp.web_request
 from aiohttp import web
 from async_lru import alru_cache
-from lxml.html import document_fromstring, HtmlElement
+from lxml.html import HtmlElement, document_fromstring
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -22,28 +22,30 @@ DESCRIPTION_FMT = """
 """.format
 
 
-def build_item_context(tree: HtmlElement) -> Dict:
+def build_item_context(tree: HtmlElement) -> dict[str, str]:
     """
     Build the context needed to replace item fields
     """
-    data = {"description": ""}
+    data: dict[str, str] = {"description": ""}
 
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
-    if jsonld_elem is not None:
-        jsonld = json.loads(jsonld_elem.text)
+    if jsonld_elem is not None and jsonld_elem.text is not None:
+        jsonld: dict[str, Any] = json.loads(jsonld_elem.text)
         if "description" not in jsonld:
             description_meta = tree.find('./head/meta[@name="description"]')
-            jsonld["description"] = description_meta.get("content")
+            if description_meta is not None:
+                jsonld["description"] = description_meta.get("content")
         data["description"] = DESCRIPTION_FMT(**jsonld)
 
     return data
 
 
 @alru_cache(maxsize=CACHE_SIZE)
-async def fetch_seo_context(url: str, guid: str) -> Dict:
+async def fetch_seo_context(url: str, guid: str) -> dict[str, str]:
     logger.info("Fetching url: %s guid: %s", url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=
-        resp = await session.get(url)
+        resp = await session.get(url, timeout=aiohttp.ClientTimeout(total=5))
+        resp.raise_for_status()
         # XML can take a file-like object but aiohttp's read() isn't file-like
         article_tree = document_fromstring(await resp.read())
         return build_item_context(article_tree)
@@ -59,7 +61,8 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
 
     async with aiohttp.ClientSession() as session:
         try:
-            resp = await session.get(feed_url)
+            resp = await session.get(feed_url, timeout=aiohttp.ClientTimeout(total=5))
+            resp.raise_for_status()
         except ValueError as e:
             return web.Response(status=400, text=str(e))
 
@@ -69,12 +72,22 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
             return web.Response(status=400, text="No feed items found")
 
         for item in items:
-            url = item.find("./link").text
-            guid = item.find("./guid").text
+            link_elem = item.find("./link")
+            guid_elem = item.find("./guid")
+
+            if link_elem is None or link_elem.text is None:
+                logger.warning("Skipping item with missing link")
+                continue
+            if guid_elem is None or guid_elem.text is None:
+                logger.warning("Skipping item with missing guid")
+                continue
+
+            url = link_elem.text
+            guid = guid_elem.text
             context = await fetch_seo_context(url, guid)
 
             # Re-write XML
-            for k, v in context.items():
+            for k in context.keys():
                 node = item.find("./" + k)
                 assert node is not None
                 node.text = context[k]

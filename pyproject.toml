@@ -13,17 +13,35 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "ruff>=0.1.0",
-  "pytest>=7.0.1",
-  "pytest-cov>=3.0.0",
-  "pytest-watch>=4.2.0",
-  "mypy>=0.931",
+  "ruff",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-watch",
+  "mypy",
   "lxml-stubs",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = [
+  "A",   # flake8-builtins
+  "B",   # flake8-bugbear
+  "E",   # error
+  "F",   # pyflakes
+  "G",   # flake8-logging-format
+  "I",   # isort
+  "N",   # pep8-naming
+  "RET", # flakes8-return
+  "RUF", # Ruff-specific rules
+  "UP",  # pyupgrade
+]
 
 [tool.coverage.run]
 branch = true
