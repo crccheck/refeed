@@ -12,7 +12,7 @@ dependencies = [
   "lxml>=4.6.2",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "ruff>=0.1.0",
   "pytest>=7.0.1",

@@ -18,7 +18,7 @@ RUN uv sync --frozen --no-dev
 
 COPY . /app
 EXPOSE 8080
-ENV PORT 8080
+ENV PORT=8080
 HEALTHCHECK CMD nc -z localhost 8080
 
 CMD ["uv", "run", "main.py"]

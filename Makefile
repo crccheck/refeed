@@ -2,7 +2,7 @@ help: ## Shows this help
 	@echo "$$(grep -h '#\{2\}' $(MAKEFILE_LIST) | sed 's/: #\{2\} /	/' | column -t -s '	')"
 
 install: ## Install requirements
-	uv sync
+	uv sync --all-extras
 
 dev: ## Run dev environment with a watcher
 	nodemon -e py -x python main.py
@@ -30,5 +30,5 @@ docker/build:
 docker/run:
 	docker run -i -t --rm -p 8080:8080 crccheck/refeed
 
-docker/push: docker/build
-	docker push crccheck/refeed
+docker/push: ## Build and push production Docker artifact
+	docker buildx build --platform linux/amd64 --tag crccheck/refeed --push .
