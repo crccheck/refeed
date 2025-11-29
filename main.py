@@ -2,13 +2,12 @@ import json
 import logging
 import os
 from xml.etree import ElementTree as ET
-from typing import Dict
 
 import aiohttp
 import aiohttp.web_request
 from aiohttp import web
 from async_lru import alru_cache
-from lxml.html import document_fromstring, HtmlElement
+from lxml.html import HtmlElement, document_fromstring
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ DESCRIPTION_FMT = """
 """.format
 
 
-def build_item_context(tree: HtmlElement) -> Dict:
+def build_item_context(tree: HtmlElement) -> dict:
     """
     Build the context needed to replace item fields
     """
@@ -40,7 +39,7 @@ def build_item_context(tree: HtmlElement) -> Dict:
 
 
 @alru_cache(maxsize=CACHE_SIZE)
-async def fetch_seo_context(url: str, guid: str) -> Dict:
+async def fetch_seo_context(url: str, guid: str) -> dict:
     logger.info("Fetching url: %s guid: %s", url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=
         resp = await session.get(url)

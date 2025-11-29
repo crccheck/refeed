@@ -26,7 +26,13 @@ line-length = 100
 target-version = "py313"
 
 [tool.ruff.lint]
-extend-select = ["E", "F", "I", "U"]
+extend-select = [
+  "B",  # flake8-bugbear
+  "E",  # error
+  "F",  # pyflakes
+  "I",  # isort
+  "UP", # pyupgrade
+]
 
 [tool.coverage.run]
 branch = true
