@@ -2,7 +2,7 @@ help: ## Shows this help
 	@echo "$$(grep -h '#\{2\}' $(MAKEFILE_LIST) | sed 's/: #\{2\} /	/' | column -t -s '	')"
 
 install: ## Install requirements
-	poetry install
+	uv sync
 
 dev: ## Run dev environment with a watcher
 	nodemon -e py -x python main.py
