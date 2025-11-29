@@ -68,12 +68,22 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
             return web.Response(status=400, text="No feed items found")
 
         for item in items:
-            url = item.find("./link").text
-            guid = item.find("./guid").text
+            link_elem = item.find("./link")
+            guid_elem = item.find("./guid")
+
+            if link_elem is None or link_elem.text is None:
+                logger.warning("Skipping item with missing link")
+                continue
+            if guid_elem is None or guid_elem.text is None:
+                logger.warning("Skipping item with missing guid")
+                continue
+
+            url = link_elem.text
+            guid = guid_elem.text
             context = await fetch_seo_context(url, guid)
 
             # Re-write XML
-            for k, v in context.items():
+            for k in context.keys():
                 node = item.find("./" + k)
                 assert node is not None
                 node.text = context[k]
