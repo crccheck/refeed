@@ -57,8 +57,9 @@ def test_build_gizmodo_graph(html_gizmodo_tree):
     # Should extract description from WebPage in @graph
     assert "Mamoru Oshii's cult classic" in item["description"]
     # Should extract thumbnailUrl from WebPage
-    assert "https://gizmodo.com/app/uploads/2025/11/Angels-Egg-io9-2025-retro-review.jpg" in item[
-        "description"
-    ]
+    assert (
+        "https://gizmodo.com/app/uploads/2025/11/Angels-Egg-io9-2025-retro-review.jpg"
+        in item["description"]
+    )
     # Should contain img tag
     assert "<img" in item["description"]
