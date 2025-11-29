@@ -29,3 +29,6 @@ docker/build:
 
 docker/run:
 	docker run -i -t --rm -p 8080:8080 crccheck/refeed
+
+docker/push: docker/build
+	docker push crccheck/refeed
