@@ -26,14 +26,15 @@ def build_item_context(tree: HtmlElement) -> dict[str, str]:
 
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
     if jsonld_elem is not None and jsonld_elem.text is not None:
-        jsonld: dict[str, Any] | list[Any] = json.loads(jsonld_elem.text)
+        parsed: dict[str, Any] | list[Any] = json.loads(jsonld_elem.text)
 
         # Handle JSON-LD that might be a list or have @graph
-        if isinstance(jsonld, list):
-            jsonld = jsonld[0] if jsonld else {}
-        elif "@graph" in jsonld:
+        jsonld: dict[str, Any]
+        if isinstance(parsed, list):
+            jsonld = parsed[0] if parsed else {}
+        elif isinstance(parsed, dict) and "@graph" in parsed:
             # Find WebPage type in graph, or fall back to first item with description/thumbnailUrl
-            graph = jsonld["@graph"]
+            graph = parsed["@graph"]
             jsonld = {}
             for item in graph:
                 if item.get("@type") == "WebPage" and "description" in item:
@@ -48,6 +49,8 @@ def build_item_context(tree: HtmlElement) -> dict[str, str]:
             # Last resort: use first item
             if not jsonld and graph:
                 jsonld = graph[0]
+        else:
+            jsonld = parsed if isinstance(parsed, dict) else {}
 
         if "description" not in jsonld:
             description_meta = tree.find('./head/meta[@name="description"]')
