@@ -33,7 +33,3 @@ source = ["."]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
