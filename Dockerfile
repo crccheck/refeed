@@ -1,10 +1,10 @@
-FROM python:3.10-alpine
+FROM python:3.13-alpine
 LABEL maintainer="Chris <c@crccheck.com>"
 
 RUN apk add --no-cache --update \
   # cryptography https://cryptography.io/en/latest/installation/#alpine
   gcc musl-dev python3-dev libffi-dev openssl-dev cargo \
-  # cchardet and lxml
+  # lxml
   g++ \
   # aiodns
   libffi-dev \
