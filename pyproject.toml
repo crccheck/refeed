@@ -19,6 +19,7 @@ dev = [
   "pytest-cov>=3.0.0",
   "pytest-watch>=4.2.0",
   "mypy>=0.931",
+  "lxml-stubs",
 ]
 
 [tool.ruff]
