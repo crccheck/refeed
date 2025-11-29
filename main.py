@@ -42,7 +42,7 @@ def build_item_context(tree: HtmlElement) -> dict:
 async def fetch_seo_context(url: str, guid: str) -> dict:
     logger.info("Fetching url: %s guid: %s", url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=
-        resp = await session.get(url)
+        resp = await session.get(url, timeout=aiohttp.ClientTimeout(total=5))
         # XML can take a file-like object but aiohttp's read() isn't file-like
         article_tree = document_fromstring(await resp.read())
         return build_item_context(article_tree)
@@ -58,7 +58,7 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
 
     async with aiohttp.ClientSession() as session:
         try:
-            resp = await session.get(feed_url)
+            resp = await session.get(feed_url, timeout=aiohttp.ClientTimeout(total=5))
         except ValueError as e:
             return web.Response(status=400, text=str(e))
 
