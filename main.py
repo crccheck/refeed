@@ -81,9 +81,7 @@ async def refeed(request: aiohttp.web_request.Request) -> web.Response:
 
     logger.info(fetch_seo_context.cache_info())
 
-    return web.Response(
-        text=ET.tostring(tree).decode("utf-8"), content_type="application/rss+xml"
-    )
+    return web.Response(text=ET.tostring(tree).decode("utf-8"), content_type="application/rss+xml")
 
 
 async def robotstxt(request: aiohttp.web_request.Request) -> web.Response:

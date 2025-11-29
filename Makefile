@@ -2,10 +2,15 @@ help: ## Shows this help
 	@echo "$$(grep -h '#\{2\}' $(MAKEFILE_LIST) | sed 's/: #\{2\} /	/' | column -t -s '	')"
 
 install: ## Install requirements
-	poetry install
+	uv sync --all-extras
 
 dev: ## Run dev environment with a watcher
 	nodemon -e py -x python main.py
+
+lint: ## Run linter
+	ruff check .
+	ruff format --check .
+	mypy .
 
 tdd: ## Run tests with a watcher
 	CI=1 ptw -- -sx
@@ -29,3 +34,6 @@ docker/build:
 
 docker/run:
 	docker run -i -t --rm -p 8080:8080 crccheck/refeed
+
+docker/push: ## Build and push production Docker artifact
+	docker buildx build --platform linux/amd64 --tag crccheck/refeed --push .

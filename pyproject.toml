@@ -1,25 +1,35 @@
-[tool.poetry]
+[project]
 name = "refeed"
 version = "0.1.0"
 description = ""
-authors = ["crccheck <c@crccheck.com>"]
+authors = [{ name = "crccheck", email = "c@crccheck.com" }]
+requires-python = ">=3.10"
+dependencies = [
+  "aiodns>=3.0.0",
+  "aiohttp>=3.7.3",
+  "async-lru>=1.0.2",
+  "cchardet>=2.1.7",
+  "lxml>=4.6.2",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-aiodns = "^3.0.0"
-aiohttp = "^3.7.3"
-async_lru = "^1.0.2"
-cchardet = "^2.1.7"
-lxml = "^4.6.2"
+[dependency-groups]
+dev = [
+  "ruff>=0.1.0",
+  "pytest>=7.0.1",
+  "pytest-cov>=3.0.0",
+  "pytest-watch>=4.2.0",
+  "mypy>=0.931",
+  "lxml-stubs",
+]
 
-[tool.poetry.dev-dependencies]
-flake8 = "^4.0.1"
-pytest = "^7.0.1"
-pytest-cov = "^3.0.0"
-pytest-watch = "^4.2.0"
-mypy = "^0.931"
-black = "^22.1.0"
+[tool.ruff]
+line-length = 100
+target-version = "py310"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+[tool.coverage.run]
+branch = true
+source = ["."]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
