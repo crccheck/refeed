@@ -16,10 +16,6 @@ logger.setLevel(logging.DEBUG)
 
 
 CACHE_SIZE = int(os.environ.get("CACHE_SIZE", 500))
-DESCRIPTION_FMT = """
-<img src="{thumbnailUrl}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
-<p>{description}</p>
-""".format
 
 
 def build_item_context(tree: HtmlElement) -> dict[str, str]:
@@ -30,12 +26,45 @@ def build_item_context(tree: HtmlElement) -> dict[str, str]:
 
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
     if jsonld_elem is not None and jsonld_elem.text is not None:
-        jsonld: dict[str, Any] = json.loads(jsonld_elem.text)
+        jsonld: dict[str, Any] | list[Any] = json.loads(jsonld_elem.text)
+
+        # Handle JSON-LD that might be a list or have @graph
+        if isinstance(jsonld, list):
+            jsonld = jsonld[0] if jsonld else {}
+        elif "@graph" in jsonld:
+            # Find WebPage type in graph, or fall back to first item with description/thumbnailUrl
+            graph = jsonld["@graph"]
+            jsonld = {}
+            for item in graph:
+                if item.get("@type") == "WebPage" and "description" in item:
+                    jsonld = item
+                    break
+            # Fallback to first item with thumbnailUrl if no WebPage found
+            if not jsonld:
+                for item in graph:
+                    if "thumbnailUrl" in item:
+                        jsonld = item
+                        break
+            # Last resort: use first item
+            if not jsonld and graph:
+                jsonld = graph[0]
+
         if "description" not in jsonld:
             description_meta = tree.find('./head/meta[@name="description"]')
             if description_meta is not None:
                 jsonld["description"] = description_meta.get("content")
-        data["description"] = DESCRIPTION_FMT(**jsonld)
+
+        # Build description HTML, conditionally including thumbnail if present
+        description_text = jsonld.get("description", "")
+        thumbnail_url = jsonld.get("thumbnailUrl")
+
+        if thumbnail_url:
+            data["description"] = f"""
+<img src="{thumbnail_url}" width="300" style="float: left; margin-right: 5px; max-width: 100%;" />
+<p>{description_text}</p>
+"""
+        else:
+            data["description"] = f"<p>{description_text}</p>"
 
     return data
 
