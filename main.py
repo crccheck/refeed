@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from typing import Any
 from xml.etree import ElementTree as ET
 
 import aiohttp
@@ -21,25 +22,26 @@ DESCRIPTION_FMT = """
 """.format
 
 
-def build_item_context(tree: HtmlElement) -> dict:
+def build_item_context(tree: HtmlElement) -> dict[str, str]:
     """
     Build the context needed to replace item fields
     """
-    data = {"description": ""}
+    data: dict[str, str] = {"description": ""}
 
     jsonld_elem = tree.find('./head/script[@type="application/ld+json"]')
-    if jsonld_elem is not None:
-        jsonld = json.loads(jsonld_elem.text)
+    if jsonld_elem is not None and jsonld_elem.text is not None:
+        jsonld: dict[str, Any] = json.loads(jsonld_elem.text)
         if "description" not in jsonld:
             description_meta = tree.find('./head/meta[@name="description"]')
-            jsonld["description"] = description_meta.get("content")
+            if description_meta is not None:
+                jsonld["description"] = description_meta.get("content")
         data["description"] = DESCRIPTION_FMT(**jsonld)
 
     return data
 
 
 @alru_cache(maxsize=CACHE_SIZE)
-async def fetch_seo_context(url: str, guid: str) -> dict:
+async def fetch_seo_context(url: str, guid: str) -> dict[str, str]:
     logger.info("Fetching url: %s guid: %s", url, guid)
     async with aiohttp.ClientSession() as session:  # TODO headers=
         resp = await session.get(url, timeout=aiohttp.ClientTimeout(total=5))
